@@ -24,13 +24,13 @@ import semmle.code.cpp.dataflow.TaintTracking
 //         node.getLocation() = loc
 //     )
 // }
-string target_function() { result = "swPipeBase_create" }
+string target_function() { result = "swReactorSelect_free" }
 
 /* line where the target variable is initialized. */
-int taint_src_line() { result = 32 }
+int taint_src_line() { result = 75 }
 
 /* line where the fix location is. */
-int taint_sink_line() { result = 41 }
+int taint_sink_line() { result = 76 }
 
 predicate isFixLocation(Location loc) {
   exists(Function func |
@@ -98,11 +98,17 @@ class TaintTrackingConfiguration extends TaintTracking::Configuration {
 }
 
 string expandPointerFieldAccess(PointerFieldAccess fa) {
-  result = fa.getQualifier().toString() + "->" + fa.toString()
+  if not (fa.getQualifier() instanceof PointerFieldAccess) then
+    result = fa.getQualifier().toString() + "->" + fa.toString()
+  else
+    result = expandPointerFieldAccess(fa.getQualifier()) + "->" + fa.toString()
 }
 
 string expandDotFieldAccess(DotFieldAccess fa) {
-  result = fa.getQualifier().toString() + "." + fa.toString()
+  if not (fa.getQualifier() instanceof DotFieldAccess) then
+    result = fa.getQualifier().toString() + "." + fa.toString()
+  else
+    result = expandDotFieldAccess(fa.getQualifier()) + "." + fa.toString()
 }
 
 string getStringFromAccess(VariableAccess va) {
@@ -116,8 +122,8 @@ string getStringFromAccess(VariableAccess va) {
 
 string getFinalOutput(VariableAccess va) {
   if va.getUnderlyingType().getPointerIndirectionLevel() = 0
-  then result = getStringFromAccess(va)
-  else result = getStringFromAccess(va) + "(pointer)"
+  then result = "non-pointer(" + getStringFromAccess(va) + ")"
+  else result = "pointer(" + getStringFromAccess(va) + ")"
 }
 
 from TaintTrackingConfiguration config, Expr src, Expr sink, string s
