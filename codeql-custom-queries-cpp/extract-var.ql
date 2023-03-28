@@ -24,13 +24,13 @@ import semmle.code.cpp.dataflow.TaintTracking
 //         node.getLocation() = loc
 //     )
 // }
-string target_function() { result = "swReactorSelect_free" }
+string target_function() { result = "swPipeBase_create" }
 
 /* line where the target variable is initialized. */
-int taint_src_line() { result = 75 }
+int taint_src_line() { result = 32 }
 
 /* line where the fix location is. */
-int taint_sink_line() { result = 76 }
+int taint_sink_line() { result = 41 }
 
 predicate isFixLocation(Location loc) {
   exists(Function func |
@@ -120,10 +120,15 @@ string getStringFromAccess(VariableAccess va) {
     else result = va.toString()
 }
 
+predicate is_va_pointer_type(VariableAccess va) {
+va.getUnspecifiedType() instanceof PointerType or
+va.getUnspecifiedType() instanceof ArrayType
+}
+
 string getFinalOutput(VariableAccess va) {
-  if va.getUnderlyingType().getPointerIndirectionLevel() = 0
-  then result = "non-pointer(" + getStringFromAccess(va) + ")"
-  else result = "pointer(" + getStringFromAccess(va) + ")"
+if is_va_pointer_type(va)
+then result = "pointer(" + getStringFromAccess(va) + ")"
+else result = "non-pointer(" + getStringFromAccess(va) + ")"
 }
 
 from TaintTrackingConfiguration config, Expr src, Expr sink, string s
